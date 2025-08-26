@@ -31,6 +31,19 @@ public class TaskController {
         return taskService.getTasksByUserId(user.getId());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Task> getTaskById(@PathVariable Long id, Principal principal) {
+        User user = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        return taskService.getTasksByTaskIdAndUserId(id, user.getId())
+                .map(ResponseEntity::ok) // Ak sa úloha nájde, vráti 200 OK s úlohou
+                .orElse(ResponseEntity.notFound().build()); // Inak vráti 404 Not Found
+
+//        Optional<Task> task = taskService.getTasksByTaskIdAndUserId(user.getId(), id);
+//        return task.orElseThrow(() -> new RuntimeException("Task not found"));
+    }
+
     @PostMapping
     public Task createTask(@RequestBody Task task, Principal principal) {
         return taskService.createTask(task, principal.getName());

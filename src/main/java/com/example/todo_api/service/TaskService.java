@@ -23,6 +23,10 @@ public class TaskService {
         return taskRepository.findByUserId(userId);
     }
 
+    public Optional<Task> getTasksByTaskIdAndUserId(Long taskId, Long userId) {
+        return taskRepository.findByIdAndUserId(taskId, userId);
+    }
+
     public Task createTask(Task task, String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
