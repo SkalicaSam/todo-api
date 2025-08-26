@@ -22,6 +22,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -88,7 +90,41 @@ public class TaskSecurityTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists());
     }
+
+    @Test
+    void whenGetTasks_thenReturnsListOfTasks() throws Exception {
+        // Create first task
+        Task task1 = new Task();
+        task1.setTitle("Task 1");
+        task1.setDescription("Description 1");
+        mockMvc.perform(post("/api/tasks")
+                        .with(user(TEST_USER2))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(task1)))
+                .andExpect(status().isCreated());
+
+        // Create second task
+        Task task2 = new Task();
+        task2.setTitle("Task 2");
+        task2.setDescription("Description 2");
+        mockMvc.perform(post("/api/tasks")
+                        .with(user(TEST_USER2))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(task2)))
+                .andExpect(status().isCreated());
+
+        // Get all tasks for the user
+        mockMvc.perform(get("/api/tasks")
+                        .with(user(TEST_USER2)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].title", is("Task 1")))
+                .andExpect(jsonPath("$[1].title", is("Task 2")));
+    }
 }
+
+
+
 
 // you must change api\src\test\resources\cleanup.sql to DELETE FROM tasks;
 //DELETE FROM users;
