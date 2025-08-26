@@ -20,6 +20,7 @@ import java.util.Optional;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.hamcrest.Matchers.hasSize;
@@ -120,6 +121,37 @@ public class TaskSecurityTest {
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].title", is("Task 1")))
                 .andExpect(jsonPath("$[1].title", is("Task 2")));
+    }
+
+    @Test
+    void whenUpdateTask_thenIsUpdated() throws Exception {
+        // Create a task first
+        Task originalTask = new Task();
+        originalTask.setTitle("Original Title");
+        originalTask.setDescription("Original Description");
+
+        String response = mockMvc.perform(post("/api/tasks")
+                        .with(user(TEST_USER2))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(originalTask)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        Task createdTask = objectMapper.readValue(response, Task.class);
+        Long taskId = createdTask.getId();
+
+        // Update the task
+        Task updatedTask = new Task();
+        updatedTask.setTitle("Updated Title");
+        updatedTask.setDescription("Updated Description");
+
+        mockMvc.perform(put("/api/tasks/" + taskId)
+                        .with(user(TEST_USER2))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updatedTask)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title", is("Updated Title")))
+                .andExpect(jsonPath("$.description", is("Updated Description")));
     }
 }
 
