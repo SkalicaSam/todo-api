@@ -20,6 +20,7 @@ import java.util.Optional;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -72,6 +73,20 @@ public class TaskSecurityTest {
         mockMvc.perform(get("/api/tasks/999")
                         .with(user(TEST_USER2)))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void whenCreateTask_thenIsCreated() throws Exception {
+        Task newTask = new Task();
+        newTask.setTitle("New Task");
+        newTask.setDescription("New task description");
+
+        mockMvc.perform(post("/api/tasks")
+                        .with(user(TEST_USER2))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(newTask)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").exists());
     }
 }
 

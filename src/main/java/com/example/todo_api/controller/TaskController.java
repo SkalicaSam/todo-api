@@ -9,7 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
@@ -45,8 +47,15 @@ public class TaskController {
     }
 
     @PostMapping
-    public Task createTask(@RequestBody Task task, Principal principal) {
-        return taskService.createTask(task, principal.getName());
+    public ResponseEntity<Task> createTask(@RequestBody Task task, Principal principal) {
+        Task createdTask = taskService.createTask(task, principal.getName());
+
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(createdTask.getId())
+                .toUri();
+
+        return ResponseEntity.created(location).body(createdTask);
     }
 
     @PutMapping("/{id}")
