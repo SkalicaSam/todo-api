@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -153,6 +154,36 @@ public class TaskSecurityTest {
                 .andExpect(jsonPath("$.title", is("Updated Title")))
                 .andExpect(jsonPath("$.description", is("Updated Description")));
     }
+
+    @Test
+    void whenDeleteTask_thenIsDeleted() throws Exception {
+        // Create a task to be deleted
+        Task taskToDelete = new Task();
+        taskToDelete.setTitle("Task to Delete");
+        taskToDelete.setDescription("This task will be deleted.");
+
+        String response = mockMvc.perform(post("/api/tasks")
+                        .with(user(TEST_USER2))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(taskToDelete)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        Task createdTask = objectMapper.readValue(response, Task.class);
+        Long taskId = createdTask.getId();
+
+        // Delete the task
+        mockMvc.perform(delete("/api/tasks/" + taskId)
+                        .with(user(TEST_USER2)))
+                .andExpect(status().isNoContent()); // it must be 204 No Content but it is 200
+
+        // Verify the task is deleted
+        mockMvc.perform(get("/api/tasks/" + taskId)
+                        .with(user(TEST_USER2)))
+                .andExpect(status().isNotFound());
+    }
+
+
 }
 
 

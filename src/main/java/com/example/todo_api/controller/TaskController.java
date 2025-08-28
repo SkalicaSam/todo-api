@@ -85,7 +85,7 @@ public class TaskController {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         if (taskService.deleteTask(id)) {
-            return ResponseEntity.ok().build();
+            return ResponseEntity.noContent().build();   // 204 No Content
         } else {
             return ResponseEntity.notFound().build();
         }
