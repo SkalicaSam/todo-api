@@ -10,12 +10,14 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @OpenAPIDefinition(   // for swagger-ui to show autorization button
     info = @Info(title = "Todo API", version = "v1"),
-    security = @SecurityRequirement(name = "basicAuth")
+    security = @SecurityRequirement(name = "bearerAuth")
 )
 @SecurityScheme(
-    name = "basicAuth",
+    name = "bearerAuth",
     type = SecuritySchemeType.HTTP,
-    scheme = "basic"
+    scheme = "bearer" ,
+    bearerFormat = "JWT"
+
 )
 public class OpenApiConfig {
 }
