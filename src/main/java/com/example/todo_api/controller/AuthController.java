@@ -38,7 +38,8 @@ public class AuthController {
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         User savedUser = userRepository.save(user);
-        return ResponseEntity.ok(savedUser);
+        String token = jwtUtil.generateToken(savedUser.getUsername());
+        return ResponseEntity.ok(new AuthResponse(token));
     }
 
     @PostMapping("/login")

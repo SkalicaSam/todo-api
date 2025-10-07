@@ -1,5 +1,6 @@
 package com.example.todo_api.controller;
 
+import com.example.todo_api.dto.TaskDto;
 import com.example.todo_api.model.Task;
 import com.example.todo_api.model.User;
 import com.example.todo_api.repository.UserRepository;
@@ -13,6 +14,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,35 +29,72 @@ public class TaskController {
     private UserRepository userRepository;
 
     @GetMapping
-    public List<Task> getTasks(Principal principal) {
+    public List<TaskDto> getTasks(Principal principal) {
         User user = userRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        return taskService.getTasksByUserId(user.getId());
+//        return taskService.getTasksByUserId(user.getId());
+
+        List<Task> tasks = taskService.getTasksByUserId(user.getId());
+        List<TaskDto> result = new ArrayList<>();
+
+
+        for (Task task : tasks) {
+            TaskDto dto = new TaskDto(
+                    task.getId(),
+                    task.getTitle(),
+                    task.getDescription(),
+                    task.isCompleted(),
+                    task.getDueDate()
+            );
+            result.add(dto);
+        }
+        return result;
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Task> getTaskById(@PathVariable Long id, Principal principal) {
+    public ResponseEntity<TaskDto> getTaskById(@PathVariable Long id, Principal principal) {
         User user = userRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        return taskService.getTasksByTaskIdAndUserId(id, user.getId())
-                .map(ResponseEntity::ok) // Ak sa úloha nájde, vráti 200 OK s úlohou
-                .orElse(ResponseEntity.notFound().build()); // Inak vráti 404 Not Found
+        Optional<Task> taskOptional = taskService.getTasksByTaskIdAndUserId(id, user.getId());
 
-//        Optional<Task> task = taskService.getTasksByTaskIdAndUserId(user.getId(), id);
-//        return task.orElseThrow(() -> new RuntimeException("Task not found"));
+        if (taskOptional.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        if (taskOptional.isPresent()) {
+            Task task = taskOptional.get();
+            TaskDto dto = new TaskDto(
+                    task.getId(),
+                    task.getTitle(),
+                    task.getDescription(),
+                    task.isCompleted(),
+                    task.getDueDate()
+            );
+            return ResponseEntity.ok(dto);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping
-    public ResponseEntity<Task> createTask(@RequestBody Task task, Principal principal) {
+    public ResponseEntity<TaskDto> createTask(@RequestBody Task task, Principal principal) {
         Task createdTask = taskService.createTask(task, principal.getName());
+
+        TaskDto createdTaskDto = new TaskDto(
+                createdTask.getId(),
+                createdTask.getTitle(),
+                createdTask.getDescription(),
+                createdTask.isCompleted(),
+                createdTask.getDueDate()
+        );
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(createdTask.getId())
                 .toUri();
 
-        return ResponseEntity.created(location).body(createdTask);
+        return ResponseEntity.created(location).body(createdTaskDto);
     }
 
     @PutMapping("/{id}")
