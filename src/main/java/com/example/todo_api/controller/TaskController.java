@@ -6,6 +6,8 @@ import com.example.todo_api.model.User;
 import com.example.todo_api.repository.UserRepository;
 import com.example.todo_api.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -29,26 +31,43 @@ public class TaskController {
     private UserRepository userRepository;
 
     @GetMapping
-    public List<TaskDto> getTasks(Principal principal) {
+    public ResponseEntity<Page<TaskDto>> getTasks(Principal principal, Pageable pageable) {
         User user = userRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 //        return taskService.getTasksByUserId(user.getId());
 
-        List<Task> tasks = taskService.getTasksByUserId(user.getId());
-        List<TaskDto> result = new ArrayList<>();
+        Page<Task> tasksPage = taskService.getTasksByUserId(user.getId(), pageable);
 
+        Page<TaskDto> tasksDtoPage = tasksPage.map(task -> new TaskDto(
+                task.getId(),
+                task.getTitle(),
+                task.getDescription(),
+                task.isCompleted(),
+                task.getDueDate()
+        ));
 
+        return ResponseEntity.ok(tasksDtoPage);
+    }
+
+    @GetMapping("/AllTasks") // for testing in swagger
+    public ResponseEntity<List<TaskDto>> getAllUsersTasks(Principal principal) {
+        User user = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        List<Task> tasks = taskService.getAllTasksByUserId(user.getId());
+
+        List<TaskDto> tasksDto = new ArrayList<>();
         for (Task task : tasks) {
-            TaskDto dto = new TaskDto(
+            tasksDto.add(new TaskDto(
                     task.getId(),
                     task.getTitle(),
                     task.getDescription(),
                     task.isCompleted(),
                     task.getDueDate()
-            );
-            result.add(dto);
+            ));
         }
-        return result;
+
+        return ResponseEntity.ok(tasksDto);
     }
 
     @GetMapping("/{id}")

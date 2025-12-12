@@ -6,6 +6,8 @@ import com.example.todo_api.repository.TaskRepository;
 import com.example.todo_api.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,8 +21,13 @@ public class TaskService {
     @Autowired
     private UserRepository userRepository;
 
-    public List<Task> getTasksByUserId(Long userId) {
-        return taskRepository.findByUserId(userId);
+    public Page<Task> getTasksByUserId(Long userId, Pageable pageable) {
+
+        return taskRepository.findByUserId(userId, pageable);
+    }
+
+    public List<Task> getAllTasksByUserId(Long userId) {
+        return taskRepository.findAllByUserId(userId);
     }
 
     public Optional<Task> getTasksByTaskIdAndUserId(Long taskId, Long userId) {
